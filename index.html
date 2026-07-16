@@ -1,362 +1,445 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <title>AWS Cost Guardian</title>
 
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css" />
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
 
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
 
     <script src="https://unpkg.com/lucide@latest"></script>
-</head>
+  </head>
 
-<body>
-
+  <body>
     <div class="app-shell">
+      <!-- =========================================
+             SIDEBAR
+        ========================================== -->
 
-        <!-- SIDEBAR -->
-        <aside class="sidebar">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-icon">
+            <i data-lucide="shield-check"></i>
+          </div>
 
-            <div class="brand">
-                <div class="brand-icon">
-                    <i data-lucide="shield-check"></i>
-                </div>
+          <div>
+            <h2>Cost Guardian</h2>
 
-                <div>
-                    <h2>Cost Guardian</h2>
-                    <span>AWS Optimization</span>
-                </div>
+            <span> AWS Optimization </span>
+          </div>
+        </div>
+
+        <nav class="navigation">
+          <a href="#" class="nav-item active">
+            <i data-lucide="layout-dashboard"></i>
+
+            <span> Dashboard </span>
+          </a>
+
+          <a href="#instances" class="nav-item">
+            <i data-lucide="server"></i>
+
+            <span> EC2 Instances </span>
+          </a>
+
+          <a href="#activity" class="nav-item">
+            <i data-lucide="activity"></i>
+
+            <span> Activity </span>
+          </a>
+        </nav>
+
+        <div class="sidebar-bottom">
+          <div class="system-status">
+            <span class="status-dot"></span>
+
+            <div>
+              <strong> System Active </strong>
+
+              <small> Automation is running </small>
+            </div>
+          </div>
+
+          <div class="aws-badge">
+            <span> Powered by </span>
+
+            <strong> AWS Serverless </strong>
+          </div>
+        </div>
+      </aside>
+
+      <!-- =========================================
+             MAIN CONTENT
+        ========================================== -->
+
+      <main class="main-content">
+        <!-- TOP HEADER -->
+
+        <header class="topbar">
+          <div class="mobile-brand">
+            <i data-lucide="shield-check"></i>
+
+            <span> Cost Guardian </span>
+          </div>
+
+          <div class="header-actions">
+            <button class="icon-button" id="refreshButton" title="Refresh data">
+              <i data-lucide="refresh-cw"></i>
+            </button>
+
+            <div class="last-updated">
+              <span> Last updated </span>
+
+              <strong id="lastUpdated"> Just now </strong>
+            </div>
+          </div>
+        </header>
+
+        <!-- =========================================
+                 DASHBOARD CONTENT
+            ========================================== -->
+
+        <section class="dashboard-container">
+          <!-- HERO -->
+
+          <div class="hero-section">
+            <div>
+              <div class="eyebrow">
+                <span class="pulse"></span>
+
+                LIVE INFRASTRUCTURE MONITORING
+              </div>
+
+              <h1>
+                Control your cloud costs
+
+                <span> before they control you. </span>
+              </h1>
+
+              <p>
+                Monitor your EC2 infrastructure and automatically protect your
+                AWS budget with intelligent resource optimization.
+              </p>
             </div>
 
-            <nav class="navigation">
+            <div class="hero-action">
+              <button class="optimize-button" id="optimizeButton">
+                <i data-lucide="zap"></i>
 
-                <a href="#" class="nav-item active">
-                    <i data-lucide="layout-dashboard"></i>
-                    <span>Dashboard</span>
-                </a>
+                <span> Run Optimization </span>
+              </button>
+            </div>
+          </div>
 
-                <a href="#instances" class="nav-item">
-                    <i data-lucide="server"></i>
-                    <span>EC2 Instances</span>
-                </a>
+          <!-- =========================================
+                     METRICS
+                ========================================== -->
 
-                <a href="#activity" class="nav-item">
-                    <i data-lucide="activity"></i>
-                    <span>Activity</span>
-                </a>
+          <div class="metrics-grid">
+            <!-- TOTAL INSTANCES -->
 
-            </nav>
-
-            <div class="sidebar-bottom">
-
-                <div class="system-status">
-                    <span class="status-dot"></span>
-
-                    <div>
-                        <strong>System Active</strong>
-                        <small>Automation is running</small>
-                    </div>
+            <div class="metric-card">
+              <div class="metric-top">
+                <div class="metric-icon blue">
+                  <i data-lucide="server"></i>
                 </div>
 
-                <div class="aws-badge">
-                    <span>Powered by</span>
-                    <strong>AWS Serverless</strong>
-                </div>
+                <span class="metric-label"> TOTAL INSTANCES </span>
+              </div>
 
+              <div class="metric-value" id="totalInstances">—</div>
+
+              <div class="metric-footer">All EC2 resources</div>
             </div>
 
-        </aside>
+            <!-- RUNNING -->
 
-
-        <!-- MAIN CONTENT -->
-        <main class="main-content">
-
-            <!-- TOP HEADER -->
-            <header class="topbar">
-
-                <div class="mobile-brand">
-                    <i data-lucide="shield-check"></i>
-                    <span>Cost Guardian</span>
+            <div class="metric-card">
+              <div class="metric-top">
+                <div class="metric-icon green">
+                  <i data-lucide="play-circle"></i>
                 </div>
 
-                <div class="header-actions">
+                <span class="metric-label"> RUNNING </span>
+              </div>
 
-                    <button class="icon-button" id="refreshButton" title="Refresh data">
-                        <i data-lucide="refresh-cw"></i>
-                    </button>
+              <div class="metric-value" id="runningInstances">—</div>
 
-                    <div class="last-updated">
-                        <span>Last updated</span>
-                        <strong id="lastUpdated">Just now</strong>
-                    </div>
+              <div class="metric-footer">Currently active</div>
+            </div>
 
+            <!-- STOPPED -->
+
+            <div class="metric-card">
+              <div class="metric-top">
+                <div class="metric-icon orange">
+                  <i data-lucide="pause-circle"></i>
                 </div>
 
-            </header>
+                <span class="metric-label"> STOPPED </span>
+              </div>
 
+              <div class="metric-value" id="stoppedInstances">—</div>
 
-            <!-- DASHBOARD CONTENT -->
-            <section class="dashboard-container">
+              <div class="metric-footer">Not consuming compute</div>
+            </div>
 
-                <!-- HERO -->
-                <div class="hero-section">
+            <!-- AUTO STOP -->
+
+            <div class="metric-card">
+              <div class="metric-top">
+                <div class="metric-icon purple">
+                  <i data-lucide="shield-check"></i>
+                </div>
+
+                <span class="metric-label"> AUTO-STOP ENABLED </span>
+              </div>
+
+              <div class="metric-value" id="autoStopInstances">—</div>
+
+              <div class="metric-footer">Under cost protection</div>
+            </div>
+
+            <!-- ESTIMATED SAVINGS -->
+
+            <!-- <div class="metric-card savings-card">
+              <div class="metric-top">
+                <div class="metric-icon savings">
+                  <i data-lucide="piggy-bank"></i>
+                </div>
+
+                <span class="metric-label"> ESTIMATED SAVINGS </span>
+              </div>
+
+              <div class="metric-value" id="estimatedSavings">$0.00</div>
+
+              <div class="metric-footer">Potential monthly savings</div>
+            </div> -->
+          </div>
+
+          <!-- =========================================
+                     COST OPTIMIZATION OVERVIEW
+                ========================================== -->
+
+          <!-- <section class="optimization-overview">
+           
+
+            <div class="optimization-header">
+              <div>
+                <span class="section-eyebrow">
+                  <span class="pulse"></span>
+
+                  COST OPTIMIZATION
+                </span>
+
+                <h2>Cloud efficiency at a glance</h2>
+              </div>
+
+              <div class="optimization-header-icon">
+                <i data-lucide="chart-no-axes-combined"></i>
+              </div>
+            </div>
+
+            
+
+            <div class="optimization-panel">
+             
+
+              <div class="savings-display">
+                <div class="savings-icon">
+                  <i data-lucide="circle-dollar-sign"></i>
+                </div>
+
+                <div class="savings-label">ESTIMATED MONTHLY SAVINGS</div>
+
+                <div class="savings-amount" id="monthlySavings">$0.00</div>
+
+                <div class="savings-description">
+                  Based on eligible EC2 resources currently stopped
+                </div>
+              </div>
+
+            
+
+              <div class="optimization-status">
+                <div class="status-header">
+                  <span> OPTIMIZATION STATUS </span>
+
+                  <span class="active-status">
+                    <span></span>
+
+                    ACTIVE
+                  </span>
+                </div>
+
+                <div class="status-title">
+                  <i data-lucide="shield-check"></i>
+
+                  Automated protection is running
+                </div>
+
+                <p>
+                  Cost Guardian continuously monitors your EC2 infrastructure
+                  and protects eligible resources from unnecessary compute
+                  costs.
+                </p>
+
+                <div class="status-details">
+                  
+
+                  <div class="status-detail">
+                    <i data-lucide="zap"></i>
 
                     <div>
+                      <strong id="impactAutoStop"> 0 </strong>
 
-                        <div class="eyebrow">
-                            <span class="pulse"></span>
-                            LIVE INFRASTRUCTURE MONITORING
-                        </div>
-
-                        <h1>
-                            Control your cloud costs
-                            <span>before they control you.</span>
-                        </h1>
-
-                        <p>
-                            Monitor your EC2 infrastructure and automatically
-                            protect your AWS budget with intelligent resource
-                            optimization.
-                        </p>
-
+                      <span> eligible resources </span>
                     </div>
+                  </div>
 
-                    <div class="hero-action">
+                
 
-                        <button class="optimize-button" id="optimizeButton">
+                  <div class="status-detail">
+                    <i data-lucide="clock-3"></i>
 
-                            <i data-lucide="zap"></i>
+                    <div>
+                      <strong> SCHEDULED </strong>
 
-                            <span>Run Optimization</span>
-
-                        </button>
-
+                      <span> automated checks </span>
                     </div>
+                  </div>
+                </div>
+              </div>
+            </div>
 
+           
+
+            <div class="optimization-footer">
+              <div>
+                <span class="footer-status-dot"></span>
+
+                <span>
+                  EventBridge Scheduler is monitoring your infrastructure
+                </span>
+              </div>
+
+              <span class="optimization-engine">
+                LAMBDA AUTOMATION ENGINE
+              </span>
+            </div>
+          </section> -->
+
+          <!-- =========================================
+                     EC2 RESOURCE MANAGEMENT
+                ========================================== -->
+
+          <section class="resource-section" id="instances">
+            <div class="section-header">
+              <div>
+                <div class="section-title-row">
+                  <h2>EC2 Resource Management</h2>
+
+                  <span class="live-badge">
+                    <span></span>
+
+                    LIVE
+                  </span>
                 </div>
 
+                <p>Monitor and manage your AWS compute resources</p>
+              </div>
 
-                <!-- METRICS -->
-                <div class="metrics-grid">
+              <button class="filter-button">
+                <i data-lucide="filter"></i>
 
-                    <div class="metric-card">
+                All Resources
 
-                        <div class="metric-top">
-                            <div class="metric-icon blue">
-                                <i data-lucide="server"></i>
-                            </div>
+                <i data-lucide="chevron-down"></i>
+              </button>
+            </div>
 
-                            <span class="metric-label">TOTAL INSTANCES</span>
-                        </div>
+            <div class="instance-table-container">
+              <div class="table-header">
+                <span> RESOURCE </span>
 
-                        <div class="metric-value" id="totalInstances">
-                            —
-                        </div>
+                <span> ENVIRONMENT </span>
 
-                        <div class="metric-footer">
-                            All EC2 resources
-                        </div>
+                <span> INSTANCE TYPE </span>
 
-                    </div>
+                <span> STATUS </span>
 
+                <span> COST PROTECTION </span>
+              </div>
 
-                    <div class="metric-card">
+              <div id="instanceList">
+                <div class="loading-state">
+                  <div class="loader"></div>
 
-                        <div class="metric-top">
-                            <div class="metric-icon green">
-                                <i data-lucide="play-circle"></i>
-                            </div>
-
-                            <span class="metric-label">RUNNING</span>
-                        </div>
-
-                        <div class="metric-value" id="runningInstances">
-                            —
-                        </div>
-
-                        <div class="metric-footer">
-                            Currently active
-                        </div>
-
-                    </div>
-
-
-                    <div class="metric-card">
-
-                        <div class="metric-top">
-                            <div class="metric-icon orange">
-                                <i data-lucide="pause-circle"></i>
-                            </div>
-
-                            <span class="metric-label">STOPPED</span>
-                        </div>
-
-                        <div class="metric-value" id="stoppedInstances">
-                            —
-                        </div>
-
-                        <div class="metric-footer">
-                            Not consuming compute
-                        </div>
-
-                    </div>
-
-
-                    <div class="metric-card">
-
-                        <div class="metric-top">
-                            <div class="metric-icon purple">
-                                <i data-lucide="shield-check"></i>
-                            </div>
-
-                            <span class="metric-label">AUTO-STOP ENABLED</span>
-                        </div>
-
-                        <div class="metric-value" id="autoStopInstances">
-                            —
-                        </div>
-
-                        <div class="metric-footer">
-                            Under cost protection
-                        </div>
-
-                    </div>
-
+                  <span> Loading AWS resources... </span>
                 </div>
+              </div>
+            </div>
+          </section>
 
+          <!-- =========================================
+                     ACTIVITY
+                ========================================== -->
 
-                <!-- INSTANCE SECTION -->
-                <section class="resource-section" id="instances">
+          <section class="activity-section" id="activity">
+            <div class="section-header">
+              <div>
+                <h2>Optimization Activity</h2>
 
-                    <div class="section-header">
+                <p>Recent system activity and automation events</p>
+              </div>
+            </div>
 
-                        <div>
+            <div class="activity-card">
+              <div class="activity-icon">
+                <i data-lucide="clock-3"></i>
+              </div>
 
-                            <div class="section-title-row">
+              <div>
+                <strong> Automatic optimization enabled </strong>
 
-                                <h2>EC2 Resource Management</h2>
+                <p>
+                  EventBridge Scheduler is monitoring your EC2 resources
+                  automatically.
+                </p>
+              </div>
 
-                                <span class="live-badge">
-                                    <span></span>
-                                    LIVE
-                                </span>
-
-                            </div>
-
-                            <p>
-                                Monitor and manage your AWS compute resources
-                            </p>
-
-                        </div>
-
-                        <button class="filter-button">
-
-                            <i data-lucide="filter"></i>
-
-                            All Resources
-
-                            <i data-lucide="chevron-down"></i>
-
-                        </button>
-
-                    </div>
-
-
-                    <div class="instance-table-container">
-
-                        <div class="table-header">
-
-                            <span>RESOURCE</span>
-                            <span>ENVIRONMENT</span>
-                            <span>INSTANCE TYPE</span>
-                            <span>STATUS</span>
-                            <span>COST PROTECTION</span>
-
-                        </div>
-
-                        <div id="instanceList">
-
-                            <div class="loading-state">
-
-                                <div class="loader"></div>
-
-                                <span>Loading AWS resources...</span>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </section>
-
-
-                <!-- ACTIVITY -->
-                <section class="activity-section" id="activity">
-
-                    <div class="section-header">
-
-                        <div>
-
-                            <h2>Optimization Activity</h2>
-
-                            <p>Recent system activity and automation events</p>
-
-                        </div>
-
-                    </div>
-
-                    <div class="activity-card">
-
-                        <div class="activity-icon">
-                            <i data-lucide="clock-3"></i>
-                        </div>
-
-                        <div>
-
-                            <strong>Automatic optimization enabled</strong>
-
-                            <p>
-                                EventBridge Scheduler is monitoring your EC2
-                                resources automatically.
-                            </p>
-
-                        </div>
-
-                        <span class="activity-status">
-                            ACTIVE
-                        </span>
-
-                    </div>
-
-                </section>
-
-            </section>
-
-        </main>
-
+              <span class="activity-status"> ACTIVE </span>
+            </div>
+          </section>
+        </section>
+      </main>
     </div>
 
+    <!-- =========================================
+         TOAST
+    ========================================== -->
 
-    <!-- TOAST -->
     <div class="toast" id="toast">
+      <i data-lucide="check-circle"></i>
 
-        <i data-lucide="check-circle"></i>
-
-        <span id="toastMessage">
-            Operation completed successfully
-        </span>
-
+      <span id="toastMessage"> Operation completed successfully </span>
     </div>
-
 
     <script src="script.js"></script>
 
-</body>
+    <script>
+      lucide.createIcons();
+    </script>
+  </body>
 </html>

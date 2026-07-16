@@ -1,92 +1,73 @@
-const API_URL =
-    "https://xcs6z6kzd1.execute-api.ap-south-1.amazonaws.com";
+const API_URL = "https://xcs6z6kzd1.execute-api.ap-south-1.amazonaws.com";
+
+// ============================================
+// DOM ELEMENTS
+// ============================================
 
 const elements = {
+  totalInstances: document.getElementById("totalInstances"),
 
-    totalInstances:
-        document.getElementById("totalInstances"),
+  runningInstances: document.getElementById("runningInstances"),
 
-    runningInstances:
-        document.getElementById("runningInstances"),
+  stoppedInstances: document.getElementById("stoppedInstances"),
 
-    stoppedInstances:
-        document.getElementById("stoppedInstances"),
+  autoStopInstances: document.getElementById("autoStopInstances"),
 
-    autoStopInstances:
-        document.getElementById("autoStopInstances"),
+//   estimatedSavings: document.getElementById("estimatedSavings"),
 
-    instanceList:
-        document.getElementById("instanceList"),
+//   monthlySavings: document.getElementById("monthlySavings"),
+//   impactAutoStop: document.getElementById("impactAutoStop"),
 
-    lastUpdated:
-        document.getElementById("lastUpdated"),
+  instanceList: document.getElementById("instanceList"),
 
-    refreshButton:
-        document.getElementById("refreshButton"),
+  lastUpdated: document.getElementById("lastUpdated"),
 
-    optimizeButton:
-        document.getElementById("optimizeButton"),
+  refreshButton: document.getElementById("refreshButton"),
 
-    toast:
-        document.getElementById("toast"),
+  optimizeButton: document.getElementById("optimizeButton"),
 
-    toastMessage:
-        document.getElementById("toastMessage")
+  toast: document.getElementById("toast"),
 
+  toastMessage: document.getElementById("toastMessage"),
 };
 
+// ============================================
+// LOAD EC2 INSTANCES
+// ============================================
 
 async function loadInstances() {
+  try {
+    elements.refreshButton.classList.add("loading");
 
-    try {
-
-        elements.refreshButton.classList.add("loading");
-
-        elements.instanceList.innerHTML = `
+    elements.instanceList.innerHTML = `
 
             <div class="loading-state">
 
                 <div class="loader"></div>
 
-                <span>Loading AWS resources...</span>
+                <span>
+                    Loading AWS resources...
+                </span>
 
             </div>
 
         `;
 
+    const response = await fetch(`${API_URL}/instances`);
 
-        const response = await fetch(
-            `${API_URL}/instances`
-        );
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                "Failed to fetch EC2 instances"
-            );
-
-        }
-
-
-        const data = await response.json();
-
-
-        updateDashboard(data);
-
-
-        elements.lastUpdated.textContent =
-            formatTime(new Date());
-
-
+    if (!response.ok) {
+      throw new Error("Failed to fetch EC2 instances");
     }
 
-    catch (error) {
+    const data = await response.json();
 
-        console.error(error);
+    updateDashboard(data);
 
+    elements.lastUpdated.textContent = formatTime(new Date());
+  } catch (error) {
+    console.error("Error loading instances:", error);
 
-        elements.instanceList.innerHTML = `
+    elements.instanceList.innerHTML = `
 
             <div class="loading-state">
 
@@ -96,50 +77,151 @@ async function loadInstances() {
 
         `;
 
-        showToast(
-            "Unable to connect to AWS API"
-        );
-
-    }
-
-    finally {
-
-        elements.refreshButton.classList.remove(
-            "loading"
-        );
-
-    }
-
+    showToast("Unable to connect to AWS API");
+  } finally {
+    elements.refreshButton.classList.remove("loading");
+  }
 }
 
+// ============================================
+// UPDATE DASHBOARD
+// ============================================
 
 function updateDashboard(data) {
+  const summary = data.summary || {};
 
-    const summary = data.summary;
+  const instances = data.instances || [];
 
-    elements.totalInstances.textContent =
-        summary.totalInstances;
+  // -----------------------------
+  // UPDATE METRICS
+  // -----------------------------
 
-    elements.runningInstances.textContent =
-        summary.runningInstances;
+  elements.totalInstances.textContent = summary.totalInstances ?? 0;
 
-    elements.stoppedInstances.textContent =
-        summary.stoppedInstances;
+  elements.runningInstances.textContent = summary.runningInstances ?? 0;
 
-    elements.autoStopInstances.textContent =
-        summary.autoStopEnabled;
+  elements.stoppedInstances.textContent = summary.stoppedInstances ?? 0;
+
+  elements.autoStopInstances.textContent = summary.autoStopEnabled ?? 0;
 
 
-    renderInstances(data.instances);
+  if (
+    elements.impactAutoStop
+) {
+
+    elements.impactAutoStop.textContent =
+        summary.autoStopEnabled
+        ?? 0;
 
 }
+  // -----------------------------
+  // CALCULATE SAVINGS
+  // -----------------------------
 
+  const estimatedSavings = calculateEstimatedSavings(instances);
+
+  const formattedSavings = formatCurrency(estimatedSavings);
+
+  if (elements.estimatedSavings) {
+    elements.estimatedSavings.textContent = formattedSavings;
+  }
+
+  if (elements.monthlySavings) {
+    elements.monthlySavings.textContent = formattedSavings;
+  }
+
+  // -----------------------------
+  // RENDER INSTANCE LIST
+  // -----------------------------
+
+  renderInstances(instances);
+}
+
+// ============================================
+// ESTIMATED COST SAVINGS
+// ============================================
+
+function calculateEstimatedSavings(instances) {
+  /*
+        Approximate hourly rates.
+
+        These are simplified estimates
+        for demonstration purposes.
+
+        Actual EC2 pricing depends on:
+
+        - AWS Region
+        - Operating System
+        - On-Demand / Reserved pricing
+        - Instance purchasing model
+    */
+
+  const hourlyRates = {
+    "t2.micro": 0.0116,
+
+    "t3.micro": 0.0104,
+
+    "t2.small": 0.023,
+
+    "t3.small": 0.0208,
+
+    "t3.medium": 0.0416,
+
+    "t2.medium": 0.0464,
+  };
+
+  let totalSavings = 0;
+
+  instances.forEach((instance) => {
+    const state = String(instance.state || "").toLowerCase();
+
+    const autoStop = String(instance.autoStop || "").toLowerCase();
+
+    const instanceType = instance.instanceType;
+
+    const isStopped = state === "stopped";
+
+    const isAutoStopEnabled = autoStop === "true";
+
+    if (isStopped && isAutoStopEnabled) {
+      const hourlyRate = hourlyRates[instanceType] || 0.01;
+
+      const monthlySavings = hourlyRate * 24 * 30;
+
+      totalSavings += monthlySavings;
+    }
+  });
+
+  return totalSavings;
+}
+
+// ============================================
+// FORMAT CURRENCY
+// ============================================
+
+function formatCurrency(amount) {
+  return new Intl.NumberFormat(
+    "en-US",
+
+    {
+      style: "currency",
+
+      currency: "USD",
+
+      minimumFractionDigits: 2,
+
+      maximumFractionDigits: 2,
+    },
+  ).format(amount);
+}
+
+// ============================================
+// RENDER EC2 INSTANCES
+// ============================================
 
 function renderInstances(instances) {
-
-    if (!instances || instances.length === 0) {
-
-        elements.instanceList.innerHTML = `
+  if (!instances || instances.length === 0) {
+    elements.instanceList.innerHTML = `
 
             <div class="loading-state">
 
@@ -149,278 +231,326 @@ function renderInstances(instances) {
 
         `;
 
-        return;
+    return;
+  }
 
-    }
+  elements.instanceList.innerHTML = instances
+    .map((instance) => {
+      const isRunning = instance.state === "running";
 
+      const autoStopEnabled =
+        String(instance.autoStop || "").toLowerCase() === "true";
 
-    elements.instanceList.innerHTML =
-        instances.map(instance => {
-
-            const isRunning =
-                instance.state === "running";
-
-
-            const autoStopEnabled =
-                instance.autoStop === "true";
+      return `
 
 
-            return `
+                    <div class="instance-row">
 
-                <div class="instance-row">
 
-                    <div class="resource-name">
+                        <!-- RESOURCE -->
 
-                        <div class="resource-icon">
 
-                            <i data-lucide="server"></i>
+                        <div class="resource-name">
+
+
+                            <div class="resource-icon">
+
+                                <i data-lucide="server"></i>
+
+                            </div>
+
+
+                            <div>
+
+
+                                <strong>
+
+                                    ${escapeHtml(instance.name)}
+
+                                </strong>
+
+
+                                <small>
+
+                                    ${escapeHtml(instance.instanceId)}
+
+                                </small>
+
+
+                            </div>
+
 
                         </div>
+
+
+
+                        <!-- ENVIRONMENT -->
+
+
+                        <div class="environment">
+
+                            ${escapeHtml(instance.environment || "Unknown")}
+
+                        </div>
+
+
+
+                        <!-- INSTANCE TYPE -->
+
+
+                        <div class="instance-type">
+
+                            ${escapeHtml(instance.instanceType || "Unknown")}
+
+                        </div>
+
+
+
+                        <!-- STATUS -->
+
 
                         <div>
 
-                            <strong>
+
+                            <div class="status-pill ${
+                              isRunning ? "running" : "stopped"
+                            }">
+
+
+                                <span></span>
+
+
                                 ${escapeHtml(
-                                    instance.name
+                                  String(
+                                    instance.state || "unknown",
+                                  ).toUpperCase(),
                                 )}
-                            </strong>
 
-                            <small>
-                                ${instance.instanceId}
-                            </small>
+
+                            </div>
+
 
                         </div>
 
-                    </div>
 
 
-                    <div class="environment">
-
-                        ${escapeHtml(
-                            instance.environment
-                        )}
-
-                    </div>
+                        <!-- COST PROTECTION -->
 
 
-                    <div class="instance-type">
-
-                        ${instance.instanceType}
-
-                    </div>
+                        <div>
 
 
-                    <div>
-
-                        <div class="status-pill ${
-                            isRunning
-                                ? "running"
-                                : "stopped"
-                        }">
-
-                            <span></span>
-
-                            ${instance.state.toUpperCase()}
-
-                        </div>
-
-                    </div>
+                            <div class="protection-pill ${
+                              autoStopEnabled ? "enabled" : "protected"
+                            }">
 
 
-                    <div>
+                                <i data-lucide="${
+                                  autoStopEnabled ? "zap" : "shield"
+                                }"></i>
 
-                        <div class="protection-pill ${
-                            autoStopEnabled
-                                ? "enabled"
-                                : "protected"
-                        }">
 
-                            <i data-lucide="${
-                                autoStopEnabled
-                                    ? "zap"
-                                    : "shield"
-                            }"></i>
-
-                            ${
-                                autoStopEnabled
+                                ${
+                                  autoStopEnabled
                                     ? "AUTO-STOP ENABLED"
                                     : "PROTECTED"
-                            }
+                                }
+
+
+                            </div>
+
 
                         </div>
 
+
                     </div>
 
-                </div>
 
-            `;
+                `;
+    })
+    .join("");
 
-        }).join("");
-
-
-    lucide.createIcons();
-
+  lucide.createIcons();
 }
 
+// ============================================
+// FORMAT TIME
+// ============================================
 
 function formatTime(date) {
+  return date.toLocaleTimeString(
+    [],
 
-    return date.toLocaleTimeString(
-        [],
-        {
-            hour: "2-digit",
-            minute: "2-digit"
-        }
-    );
+    {
+      hour: "2-digit",
 
+      minute: "2-digit",
+    },
+  );
 }
 
+// ============================================
+// ESCAPE HTML
+// ============================================
 
 function escapeHtml(value) {
+  return String(value)
+    .replace(
+      /&/g,
 
-    return String(value)
+      "&amp;",
+    )
 
-        .replace(
-            /&/g,
-            "&amp;"
-        )
+    .replace(
+      /</g,
 
-        .replace(
-            /</g,
-            "&lt;"
-        )
+      "&lt;",
+    )
 
-        .replace(
-            />/g,
-            "&gt;"
-        )
+    .replace(
+      />/g,
 
-        .replace(
-            /"/g,
-            "&quot;"
-        )
+      "&gt;",
+    )
 
-        .replace(
-            /'/g,
-            "&#039;"
-        );
+    .replace(
+      /"/g,
 
+      "&quot;",
+    )
+
+    .replace(
+      /'/g,
+
+      "&#039;",
+    );
 }
 
+// ============================================
+// TOAST NOTIFICATION
+// ============================================
 
 function showToast(message) {
+  elements.toastMessage.textContent = message;
 
-    elements.toastMessage.textContent =
-        message;
+  elements.toast.classList.add("show");
 
+  setTimeout(
+    () => {
+      elements.toast.classList.remove("show");
+    },
 
-    elements.toast.classList.add(
-        "show"
-    );
-
-
-    setTimeout(() => {
-
-        elements.toast.classList.remove(
-            "show"
-        );
-
-    }, 3500);
-
+    3500,
+  );
 }
 
+// ============================================
+// REFRESH BUTTON
+// ============================================
 
 elements.refreshButton.addEventListener(
-    "click",
-    () => {
+  "click",
 
-        loadInstances();
+  () => {
+    loadInstances();
 
-        showToast(
-            "Infrastructure data refreshed"
-        );
-
-    }
+    showToast("Infrastructure data refreshed");
+  },
 );
 
+// ============================================
+// OPTIMIZATION BUTTON
+// ============================================
 
 elements.optimizeButton.addEventListener(
-    "click",
-    async () => {
+  "click",
 
-        const originalText =
-            elements.optimizeButton.innerHTML;
+  async () => {
+    const originalText = elements.optimizeButton.innerHTML;
 
-        elements.optimizeButton.disabled = true;
+    elements.optimizeButton.disabled = true;
 
-        elements.optimizeButton.innerHTML = `
+    elements.optimizeButton.innerHTML = `
+
+
             <div class="loader"></div>
-            <span>Optimizing...</span>
+
+
+            <span>
+
+                Optimizing...
+
+            </span>
+
+
         `;
 
-        try {
+    try {
+      const response = await fetch(
+        `${API_URL}/optimize`,
 
-            const response = await fetch(
-                `${API_URL}/optimize`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({})
-                }
-            );
+        {
+          method: "POST",
 
-            const data = await response.json();
+          headers: {
+            "Content-Type": "application/json",
+          },
 
-            if (!response.ok) {
-                throw new Error(
-                    data.error || "Optimization failed"
-                );
-            }
+          body: JSON.stringify({}),
+        },
+      );
 
-            showToast(
-                data.message ||
-                "Optimization completed successfully"
-            );
+      const data = await response.json();
 
-            setTimeout(
-                loadInstances,
-                3000
-            );
+      if (!response.ok) {
+        throw new Error(data.error || "Optimization failed");
+      }
 
-        } catch (error) {
+      showToast(data.message || "Optimization completed successfully");
 
-            console.error(error);
+      setTimeout(
+        () => {
+          loadInstances();
+        },
 
-            showToast(
-                "Optimization failed: "
-                + error.message
-            );
+        3000,
+      );
+    } catch (error) {
+      console.error(
+        "Optimization error:",
 
-        } finally {
+        error,
+      );
 
-            elements.optimizeButton.disabled =
-                false;
+      showToast("Optimization failed: " + error.message);
+    } finally {
+      elements.optimizeButton.disabled = false;
 
-            elements.optimizeButton.innerHTML =
-                originalText;
+      elements.optimizeButton.innerHTML = originalText;
 
-            lucide.createIcons();
-
-        }
-
+      lucide.createIcons();
     }
+  },
 );
 
+// ============================================
+// INITIALIZE LUCIDE ICONS
+// ============================================
 
 lucide.createIcons();
 
+// ============================================
+// INITIAL DATA LOAD
+// ============================================
 
 loadInstances();
 
+// ============================================
+// AUTO REFRESH EVERY 60 SECONDS
+// ============================================
 
 setInterval(
-    loadInstances,
-    60000
+  loadInstances,
+
+  60000,
 );
