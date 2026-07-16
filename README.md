@@ -10,6 +10,14 @@ It also provides a professional web dashboard for monitoring EC2 resources and m
 
 ---
 
+## 🌐 Live Application
+
+🚀 **Access the live application:**
+
+👉 **[AWS Cost Guardian Dashboard](http://aws-cost-guardian-s3.s3-website.ap-south-1.amazonaws.com)**
+
+---
+
 ## 🚀 Features
 
 - 📊 Real-time EC2 instance monitoring
