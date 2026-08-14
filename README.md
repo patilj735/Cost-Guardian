@@ -9,13 +9,14 @@ The system automatically identifies EC2 instances tagged with `AutoStop=true`, s
 It also provides a professional web dashboard for monitoring EC2 resources and manually triggering optimization.
 
 ---
+<!--
 
 ## 🌐 Live Application
 
 🚀 **Access the live application:**
 
 👉 **[AWS Cost Guardian Dashboard](http://aws-cost-guardian-s3.s3-website.ap-south-1.amazonaws.com)**
-
+-->
 ---
 
 ## 📸 Screenshots
