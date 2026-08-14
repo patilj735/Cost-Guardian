@@ -8,7 +8,7 @@ The system automatically identifies EC2 instances tagged with `AutoStop=true`, s
 
 It also provides a professional web dashboard for monitoring EC2 resources and manually triggering optimization.
 
----
+
 <!--
 
 ## 🌐 Live Application
